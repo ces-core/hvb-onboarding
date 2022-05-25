@@ -1,0 +1,10 @@
+.env
+.eth-password
+addresses.json
+out/
+cache/
+node_modules/
+env-addresses-network
+env-addresses-mainnet
+env-addresses-goerli
+env-addresses-ces-goerli

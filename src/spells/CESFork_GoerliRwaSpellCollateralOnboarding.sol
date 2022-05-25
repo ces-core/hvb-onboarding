@@ -87,20 +87,12 @@ interface RwaOutputConduitLike {
     function push() external;
 }
 
-interface RwaInputConduitLike {
-    function rely(address usr) external;
-
-    function deny(address usr) external;
-
-    function mate(address usr) external;
-
-    function hate(address usr) external;
-
-    function push() external;
-}
-
 interface RwaUrnLike {
     function hope(address) external;
+
+    function lock(uint256) external;
+
+    function nope(address) external;
 }
 
 interface TokenDetailsLike {

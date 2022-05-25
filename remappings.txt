@@ -10,3 +10,4 @@ dss-interfaces/=lib/dss-interfaces/src/
 dss-gem-joins/=lib/dss-gem-joins/src/
 forward-proxy/=lib/forward-proxy/src/
 mip21-toolkit/=lib/mip21-toolkit/src/
+dss-exec-lib/=lib/dss-exec-lib/src/

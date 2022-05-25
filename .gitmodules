@@ -28,3 +28,6 @@
 [submodule "lib/shell-utils.git"]
 	path = lib/shell-utils.git
 	url = https://github.com/clio-finance/shell-utils.git
+[submodule "lib/dss-exec-lib"]
+	path = lib/dss-exec-lib
+	url = https://github.com/clio-finance/dss-exec-lib

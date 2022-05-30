@@ -11,8 +11,8 @@ export ETH_GAS=6000000
 
 # TODO: confirm if name/symbol is going to follow the RWA convention
 # TODO: confirm with DAO at the time of mainnet deployment if OFH will indeed be 007
-[[ -z "$NAME" ]] && NAME="RWA-009"
-[[ -z "$SYMBOL" ]] && SYMBOL="RWA009"
+[[ -z "$NAME" ]] && NAME="RWA-009AT1"
+[[ -z "$SYMBOL" ]] && SYMBOL="RWA009AT1"
 #
 # WARNING (2021-09-08): The system cannot currently accomodate any LETTER beyond
 # "A".  To add more letters, we will need to update the PIP naming convention
@@ -39,14 +39,14 @@ make build
 # tokenize it
 [[ -z "$RWA_TOKEN" ]] && {
     echo 'WARNING: `$RWA_TOKEN` not set. Deploying it...' >&2
-    TX=$(seth send --async "${RWA_TOKEN_FACTORY}" 'createRwaToken(string,string,address)' \"$NAME\" \"$SYMBOL\" "$MCD_PAUSE_PROXY")
+    TX=$(seth send --async "${RWA_TOKEN_FAB}" 'createRwaToken(string,string,address)' \"$NAME\" \"$SYMBOL\" "$MCD_PAUSE_PROXY")
     echo "TX: $TX" >&2
 
-    RECEIPT="$(seth receipt $RWA_TOKEN_CREATE_TX)"
+    RECEIPT="$(seth receipt $TX)"
     TX_STATUS="$(awk '/^status/ { print $2 }' <<<"$RECEIPT")"
     [[ "$TX_STATUS" != "1" ]] && die "Failed to create ${SYMBOL} token in tx ${TX}."
 
-    RWA_TOKEN="$(seth call "$RWA_TOKEN_FACTORY" "tokenAddresses(bytes32)(address)" $(seth --from-ascii "$SYMBOL"))"
+    RWA_TOKEN="$(seth call "$RWA_TOKEN_FAB" "tokenAddresses(bytes32)(address)" $(seth --from-ascii "$SYMBOL"))"
 }
 
 echo "${SYMBOL}: ${RWA_TOKEN}" >&2
@@ -59,7 +59,7 @@ echo "${SYMBOL}_${LETTER}_MATE: ${MATE}" >&2
 
 # route it
 [[ -z "$RWA_OUTPUT_CONDUIT" ]] && {
-    RWA_OUTPUT_CONDUIT=$(dapp create RwaOutputConduit "$MCD_DAI")
+    RWA_OUTPUT_CONDUIT=$(dapp create RwaOutputConduit2 "$MCD_DAI")
     echo "${SYMBOL}_${LETTER}_OUTPUT_CONDUIT: ${RWA_OUTPUT_CONDUIT}" >&2
 
     # trust addresses for goerli

@@ -30,10 +30,8 @@ interface RelyLike {
 }
 
 contract DssSpellAction is DssAction, DssSpellCollateralOnboardingAction {
-    address public constant RWA_URN_PROXY_VIEW = 0x590128AecF8D61B5Bc5965b768CC999Eb8531aFA;
-
     // Provides a descriptive tag for bot consumption
-    string public constant override description = "Goerli Spell";
+    string public constant override description = "HVB onboarding CES Goerli Spell";
 
     // Turn office hours off
     function officeHours() public override returns (bool) {
@@ -42,9 +40,7 @@ contract DssSpellAction is DssAction, DssSpellCollateralOnboardingAction {
 
     function actions() public override {
         ChainlogAbstract CHAINLOG = ChainlogAbstract(DssExecLib.LOG);
-
         onboardNewCollaterals();
-        CHAINLOG.setAddress("RWA_URN_PROXY_VIEW", RWA_URN_PROXY_VIEW);
         DssExecLib.setChangelogVersion("0.3.0");
     }
 }

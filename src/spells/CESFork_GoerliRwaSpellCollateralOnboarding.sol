@@ -131,13 +131,13 @@ contract DssSpellCollateralOnboardingAction {
     IlkRegistryAbstract constant REGISTRY = IlkRegistryAbstract(0x8E8049Eb87673aC30D8d17CdDF4f0a08b5e7Cc0d);
 
     address constant MIP21_LIQUIDATION_ORACLE = 0x493A7F7E6f44D3bd476bc1bfBBe191164269C0Cc;
-    address constant RWA009 = 0x30e2057fD8fc78133EFa10bFed5acAc5Cf7Aa592;
-    address constant MCD_JOIN_RWA009_A = 0x162E00E56F26ce21874D768eCB408D294Bc8F3Db;
-    address constant RWA009_A_URN = 0xDE6c4166556f56ba4A88b391c84EAa0CfD89bc55;
-    address constant RWA009_A_OUTPUT_CONDUIT = 0x48250acC257FF9011715C68017B3F0ef26103B3c;
-    address constant RWA009_A_OPERATOR = 0x3E774D9dfA578cc82C5b94a329230cD5736e9106;
-    address constant RWA009_A_MATE = 0x969880695d8aDFB8e9C38982e07905CC42eD3fAd;
-    address constant RWA009_A_TESTING_MATE = 0xc0b362cbb0117Ec6A4b589f744d4dECb2768A2eB;
+    address constant RWA009AT1 = 0x03171EF79F35bb68624C0572159eC582fc24eB10;
+    address constant MCD_JOIN_RWA009AT1_A = 0xd3E94F87b0b5d358666713Faf5b4Ba5112Feb13a;
+    address constant RWA009AT1_A_URN = 0xC67421A9a4c3e1cab2b38210FF1744F8fE27f290;
+    address constant RWA009AT1_A_OUTPUT_CONDUIT = 0x634503e447569262F0F0548757FFf7a88a332242;
+    address constant RWA009AT1_A_OPERATOR = 0x157B8a1F84DC0a21E1C7292f5C95bd046550e5eB;
+    address constant RWA009AT1_A_MATE = 0x969880695d8aDFB8e9C38982e07905CC42eD3fAd;
+    address constant RWA009_A_TESTING_MATE = 0x9D36acB332426A70Eb6C2d0B970BE480C2DCA45D;
 
     address constant RWA009_A_HVB_OPERATOR = 0xb9444802F0831A3EB9f90E24EFe5FfA20138d684;
     address constant RWA009_A_HVB_MATE = 0x73E7FacDD8E4b378bBC87277Fa7dA84C9a16A82d;
@@ -171,10 +171,13 @@ contract DssSpellCollateralOnboardingAction {
         bytes32 ilk = "RWA009-A";
 
         // Sanity checks
-        require(GemJoinAbstract(MCD_JOIN_RWA009_A).vat() == MCD_VAT, "join-vat-not-match");
-        require(GemJoinAbstract(MCD_JOIN_RWA009_A).ilk() == ilk, "join-ilk-not-match");
-        require(GemJoinAbstract(MCD_JOIN_RWA009_A).gem() == RWA009, "join-gem-not-match");
-        require(GemJoinAbstract(MCD_JOIN_RWA009_A).dec() == DSTokenAbstract(RWA009).decimals(), "join-dec-not-match");
+        require(GemJoinAbstract(MCD_JOIN_RWA009AT1_A).vat() == MCD_VAT, "join-vat-not-match");
+        require(GemJoinAbstract(MCD_JOIN_RWA009AT1_A).ilk() == ilk, "join-ilk-not-match");
+        require(GemJoinAbstract(MCD_JOIN_RWA009AT1_A).gem() == RWA009AT1, "join-gem-not-match");
+        require(
+            GemJoinAbstract(MCD_JOIN_RWA009AT1_A).dec() == DSTokenAbstract(RWA009AT1).decimals(),
+            "join-dec-not-match"
+        );
 
         /*
          * init the RwaLiquidationOracle2
@@ -193,7 +196,7 @@ contract DssSpellCollateralOnboardingAction {
         JugAbstract(MCD_JUG).init(ilk);
 
         // Allow RWA009 Join to modify Vat registry
-        VatAbstract(MCD_VAT).rely(MCD_JOIN_RWA009_A);
+        VatAbstract(MCD_VAT).rely(MCD_JOIN_RWA009AT1_A);
 
         // Allow RwaLiquidationOracle2 to modify Vat registry
         VatAbstract(MCD_VAT).rely(MIP21_LIQUIDATION_ORACLE);
@@ -215,47 +218,47 @@ contract DssSpellCollateralOnboardingAction {
         SpotAbstract(MCD_SPOT).poke(ilk);
 
         // give the urn permissions on the join adapter
-        GemJoinAbstract(MCD_JOIN_RWA009_A).rely(RWA009_A_URN);
+        GemJoinAbstract(MCD_JOIN_RWA009AT1_A).rely(RWA009AT1_A_URN);
 
         // set up the urn
-        RwaUrnLike(RWA009_A_URN).hope(RWA009_A_OPERATOR);
-        RwaUrnLike(RWA009_A_URN).hope(RWA009_A_HVB_OPERATOR);
+        RwaUrnLike(RWA009AT1_A_URN).hope(RWA009AT1_A_OPERATOR);
+        RwaUrnLike(RWA009AT1_A_URN).hope(RWA009_A_HVB_OPERATOR);
 
         // set up output conduit
-        RwaOutputConduitLike(RWA009_A_OUTPUT_CONDUIT).hope(RWA009_A_OPERATOR);
-        RwaOutputConduitLike(RWA009_A_OUTPUT_CONDUIT).hope(RWA009_A_HVB_OPERATOR);
+        RwaOutputConduitLike(RWA009AT1_A_OUTPUT_CONDUIT).hope(RWA009AT1_A_OPERATOR);
+        RwaOutputConduitLike(RWA009AT1_A_OUTPUT_CONDUIT).hope(RWA009_A_HVB_OPERATOR);
 
         // whitelist DIIS Group in the conduits
-        RwaOutputConduitLike(RWA009_A_OUTPUT_CONDUIT).mate(RWA009_A_MATE);
+        RwaOutputConduitLike(RWA009AT1_A_OUTPUT_CONDUIT).mate(RWA009AT1_A_MATE);
 
-        RwaOutputConduitLike(RWA009_A_OUTPUT_CONDUIT).mate(RWA009_A_TESTING_MATE);
+        RwaOutputConduitLike(RWA009AT1_A_OUTPUT_CONDUIT).mate(RWA009_A_TESTING_MATE);
 
-        RwaOutputConduitLike(RWA009_A_OUTPUT_CONDUIT).mate(RWA009_A_HVB_MATE);
+        RwaOutputConduitLike(RWA009AT1_A_OUTPUT_CONDUIT).mate(RWA009_A_HVB_MATE);
 
         // lock RWA009 Token in the URN
-        ERC20Like(RWA009).approve(RWA009_A_URN, 1 * WAD);
-        RwaUrnLike(RWA009_A_URN).hope(address(this));
-        RwaUrnLike(RWA009_A_URN).lock(1 * WAD);
-        RwaUrnLike(RWA009_A_URN).nope(address(this));
+        ERC20Like(RWA009AT1).approve(RWA009AT1_A_URN, 1 * WAD);
+        RwaUrnLike(RWA009AT1_A_URN).hope(address(this));
+        RwaUrnLike(RWA009AT1_A_URN).lock(1 * WAD);
+        RwaUrnLike(RWA009AT1_A_URN).nope(address(this));
 
         // ChainLog Updates
         // CHANGELOG.setAddress("MIP21_LIQUIDATION_ORACLE", MIP21_LIQUIDATION_ORACLE);
         // Add RWA009 contract to the changelog
-        CHANGELOG.setAddress("RWA009", RWA009);
-        CHANGELOG.setAddress("MCD_JOIN_RWA009_A", MCD_JOIN_RWA009_A);
-        CHANGELOG.setAddress("RWA009_A_URN", RWA009_A_URN);
-        CHANGELOG.setAddress("RWA009_A_OUTPUT_CONDUIT", RWA009_A_OUTPUT_CONDUIT);
+        CHANGELOG.setAddress("RWA009AT1", RWA009AT1);
+        CHANGELOG.setAddress("MCD_JOIN_RWA009AT1_A", MCD_JOIN_RWA009AT1_A);
+        CHANGELOG.setAddress("RWA009AT1_A_URN", RWA009AT1_A_URN);
+        CHANGELOG.setAddress("RWA009AT1_A_OUTPUT_CONDUIT", RWA009AT1_A_OUTPUT_CONDUIT);
 
         REGISTRY.put(
-            "RWA009-A",
-            MCD_JOIN_RWA009_A,
-            RWA009,
-            GemJoinAbstract(MCD_JOIN_RWA009_A).dec(),
+            "RWA009AT1-A",
+            MCD_JOIN_RWA009AT1_A,
+            RWA009AT1,
+            GemJoinAbstract(MCD_JOIN_RWA009AT1_A).dec(),
             REG_CLASS_RWA,
             pip,
             address(0),
-            TokenDetailsLike(RWA009).name(),
-            TokenDetailsLike(RWA009).symbol()
+            TokenDetailsLike(RWA009AT1).name(),
+            TokenDetailsLike(RWA009AT1).symbol()
         );
     }
 }

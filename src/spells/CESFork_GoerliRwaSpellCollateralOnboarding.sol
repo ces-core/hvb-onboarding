@@ -168,7 +168,7 @@ contract DssSpellCollateralOnboardingAction {
         // RWA009-A collateral deploy
 
         // Set ilk bytes32 variable
-        bytes32 ilk = "RWA009-A";
+        bytes32 ilk = "RWA009AT1-A";
 
         // Sanity checks
         require(GemJoinAbstract(MCD_JOIN_RWA009AT1_A).vat() == MCD_VAT, "join-vat-not-match");
@@ -228,7 +228,7 @@ contract DssSpellCollateralOnboardingAction {
         RwaOutputConduitLike(RWA009AT1_A_OUTPUT_CONDUIT).hope(RWA009AT1_A_OPERATOR);
         RwaOutputConduitLike(RWA009AT1_A_OUTPUT_CONDUIT).hope(RWA009_A_HVB_OPERATOR);
 
-        // whitelist DIIS Group in the conduits
+        // whitelist in the conduits
         RwaOutputConduitLike(RWA009AT1_A_OUTPUT_CONDUIT).mate(RWA009AT1_A_MATE);
 
         RwaOutputConduitLike(RWA009AT1_A_OUTPUT_CONDUIT).mate(RWA009_A_TESTING_MATE);

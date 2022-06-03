@@ -87,7 +87,7 @@
    seth send "$OPERATOR" "wipe(uint)" $DAI_AMOUNT
    ```
 
-4. Free the gem from the urn [optional]
+4. Free the gem from the urn
 
    ```bash
    TOKEN_AMOUNT=$(seth --to-wei '.01' ETH)

@@ -9,3 +9,4 @@ env-addresses-mainnet
 env-addresses-goerli
 env-addresses-ces-goerli
 .DS_Store
+.vscode/

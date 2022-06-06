@@ -413,7 +413,7 @@ contract GoerliDssSpellTestBase is Config, DSTest, DSMath {
         assertEq(clipMom.authority(), values.clipper_mom_authority, "TestError/clipperMom-authority");
 
         // check number of ilks
-        assertEq(reg.count(), values.ilk_count + 4, "TestError/ilks-count");
+        assertEq(reg.count(), values.ilk_count, "TestError/ilks-count");
 
         // flap
         // check beg value

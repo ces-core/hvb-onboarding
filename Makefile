@@ -24,8 +24,7 @@ size:; ./scripts/contract-size.sh ${file} ${contract} ${args}
 
 test-remote: check-api-key; dapp test --rpc-url $(call alchemy-url,goerli) # --ffi # enable if you need the `ffi` cheat code on HEVM
 test-local: ; @ETH_RPC_URL='http://localhost:8545' dapp test --rpc  # --ffi # enable if you need the `ffi` cheat code on HEVM
-test-local-forge: ;forge test --fork-url "http://localhost:8545" --force
-
+test-local-forge: ; @ETH_RPC_URL='http://localhost:8545' ./test-dssspell-forge.sh match="$(match)" block="$(block)"
 # mainnet
 deploy-mainnet: check-api-key; @ETH_RPC_URL=$(call alchemy-url,mainnet) ./scripts/deploy-mainnet.sh
 # goerli

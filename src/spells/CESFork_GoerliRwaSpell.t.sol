@@ -148,9 +148,9 @@ contract DssSpellTest is GoerliDssSpellTestBase {
         scheduleWaitAndCast(address(spell));
         assertTrue(spell.done(), "TestError/spell-not-done");
 
-        // checkSystemValues(afterSpell);
+        checkSystemValues(afterSpell);
 
-        // checkCollateralValues(afterSpell);
+        checkCollateralValues(afterSpell);
     }
 
     function testRemoveChainlogValues() private {

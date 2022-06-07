@@ -20,19 +20,6 @@ make update
 cp .env.exaples .env
 ```
 
-### Build contracts
-
-```bash
-make build
-```
-
-### Test contracts
-
-```bash
-make test-local # using a local node listening on http://localhost:8545
-make test-remote # using a remote node (alchemy). Requires ALCHEMY_API_KEY env var.
-```
-
 ### Deploy contracts
 
 ```bash

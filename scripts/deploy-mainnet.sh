@@ -6,7 +6,7 @@ set -eo pipefail
 
 source "${BASH_SOURCE%/*}/common.sh"
 # shellcheck disable=SC1091
-source "${BASH_SOURCE%/*}/build-env-addresses.sh" mainnet >/dev/null 2>&1
+source "${BASH_SOURCE%/*}/build-env-addresses.sh" mainnet >&2
 
 [[ "$ETH_RPC_URL" && "$(seth chain)" == "ethlive" ]] || die "Please set a mainnet ETH_RPC_URL"
 [[ -z "$MIP21_LIQUIDATION_ORACLE" ]] || die 'Please set the MIP21_LIQUIDATION_ORACLE env var'
@@ -66,13 +66,14 @@ seth send "$RWA_JOIN" 'rely(address)' "$MCD_PAUSE_PROXY" &&
     seth send "$RWA_JOIN" 'deny(address)' "$ETH_FROM"
 
 # urn it
-RWA_URN=$(dapp create RwaUrn "$MCD_VAT" "$MCD_JUG" "$RWA_JOIN" "$MCD_JOIN_DAI" "$RWA_OUTPUT_CONDUIT")
+RWA_URN=$(dapp create RwaUrn2 "$MCD_VAT" "$MCD_JUG" "$RWA_JOIN" "$MCD_JOIN_DAI" "$RWA_OUTPUT_CONDUIT")
 seth send "$RWA_URN" 'rely(address)' "$MCD_PAUSE_PROXY" &&
     seth send "$RWA_URN" 'deny(address)' "$ETH_FROM"
 
-[[ -z "$RWA_URN_PROXY_ACTIONS" ]] && {
-    RWA_URN_PROXY_ACTIONS=$(dapp create RwaUrnProxyActions)
-    echo "RWA_URN_PROXY_ACTIONS: ${RWA_URN_PROXY_ACTIONS}" >&2
+# jar it
+[[ -z "$RWA_JAR" ]] && {
+    RWA_JAR=$(dapp create RwaJar "$MCD_JOIN_DAI" "$MCD_VOW")
+    log "${SYMBOL}_${LETTER}_JAR: ${RWA_JAR}"
 }
 
 # print it
@@ -80,13 +81,13 @@ cat << JSON
 {
     "MIP21_LIQUIDATION_ORACLE": "${MIP21_LIQUIDATION_ORACLE}",
     "RWA_TOKEN_FACTORY": "${RWA_TOKEN_FACTORY}",
-    "RWA_URN_PROXY_ACTIONS": "${RWA_URN_PROXY_ACTIONS}",
     "SYMBOL": "${SYMBOL}",
     "NAME": "${NAME}",
     "ILK": "${ILK}",
     "${SYMBOL}": "${RWA_TOKEN}",
     "MCD_JOIN_${SYMBOL}_${LETTER}": "${RWA_JOIN}",
     "${SYMBOL}_${LETTER}_URN": "${RWA_URN}",
+    "${SYMBOL}_${LETTER}_JAR": "${RWA_JAR}",
     "${SYMBOL}_${LETTER}_INPUT_CONDUIT": "${RWA_INPUT_CONDUIT}",
     "${SYMBOL}_${LETTER}_OUTPUT_CONDUIT": "${RWA_OUTPUT_CONDUIT}",
     "${SYMBOL}_${LETTER}_OPERATOR": "${OPERATOR}",

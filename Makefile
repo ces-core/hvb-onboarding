@@ -11,6 +11,8 @@ lint:; yarn run lint
 SOLC_VERSION := 0_6_12
 solc:; nix-env -f https://github.com/dapphub/dapptools/archive/master.tar.gz -iA solc-static-versions.solc_${SOLC_VERSION}
 
+build:; dapp build
+
 estimate:; ./scripts/estimate-gas.sh ${file} ${contract} ${args}
 
 flatten:; hevm flatten --source-file ${file} --json-file out/dapp.sol.json

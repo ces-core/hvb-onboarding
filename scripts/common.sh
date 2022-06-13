@@ -21,8 +21,7 @@ ETH_RPC_URL=${ETH_RPC_URL:-http://localhost:8545}
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 log() {
-	printf '%b\n' "${GREEN}${*}${NC}"
-	echo ""
+	printf '%b\n' "${GREEN}${*}${NC}" >&2
 }
 
 # Coloured output helpers

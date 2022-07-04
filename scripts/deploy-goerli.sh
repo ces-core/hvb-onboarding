@@ -7,8 +7,7 @@ source "${BASH_SOURCE%/*}/common.sh"
 source "${BASH_SOURCE%/*}/build-env-addresses.sh" goerli >&2
 
 [[ "$ETH_RPC_URL" && "$(seth chain)" == "goerli" ]] || die "Please set a goerli ETH_RPC_URL"
-[[ -z "$MIP21_LIQUIDATION_ORACLE" ]] || die 'Please set the MIP21_LIQUIDATION_ORACLE env var'
-
+[[ -z "${MIP21_LIQUIDATION_ORACLE}" ]] && die 'Please set the MIP21_LIQUIDATION_ORACLE env var'
 export ETH_GAS=6000000
 
 # TODO: confirm if name/symbol is going to follow the RWA convention
@@ -51,7 +50,7 @@ make build
 [[ -z "$DESTINATION_ADDRESS" ]] && die "DESTINATION_ADDRESS is not set"
 
 # join it
-RWA_JOIN=$(dapp create AuthGemJoin "$MCD_VAT" "$ILK_ENCODED" "$RWA_WRAPPER_TOKEN")
+RWA_JOIN=$(dapp create AuthGemJoin "$MCD_VAT" "$ILK_ENCODED" "$RWA_TOKEN")
 seth send "$RWA_JOIN" 'rely(address)' "$MCD_PAUSE_PROXY" &&
     seth send "$RWA_JOIN" 'deny(address)' "$ETH_FROM"
 
@@ -62,7 +61,7 @@ seth send "$RWA_URN" 'rely(address)' "$MCD_PAUSE_PROXY" &&
 
 # jar it
 [[ -z "$RWA_JAR" ]] && {
-    RWA_JAR=$(dapp create RwaJar "$MCD_JOIN_DAI" "$MCD_VOW")
+    RWA_JAR=$(dapp create RwaJar "$CHANGELOG")
     log "${SYMBOL}_${LETTER}_JAR: ${RWA_JAR}"
 }
 

@@ -65,7 +65,7 @@ seth send "$RWA_URN" 'rely(address)' "$MCD_PAUSE_PROXY" &&
 
 # jar it
 [[ -z "$RWA_JAR" ]] && {
-    RWA_JAR=$(dapp create RwaJar "$MCD_JOIN_DAI" "$MCD_VOW")
+    RWA_JAR=$(dapp create RwaJar "$CHANGELOG")
     log "${SYMBOL}_${LETTER}_JAR: ${RWA_JAR}"
 }
 

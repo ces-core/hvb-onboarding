@@ -9,15 +9,13 @@ source "${BASH_SOURCE%/*}/build-env-addresses.sh" ces-goerli >&2
 
 export ETH_GAS=6000000
 
-# TODO: confirm if name/symbol is going to follow the RWA convention
+
 # TODO: confirm with DAO at the time of mainnet deployment if OFH will indeed be 007
-[[ -z "$NAME" ]] && NAME="RWA-009AT1"
-[[ -z "$SYMBOL" ]] && SYMBOL="RWA009AT1"
+[[ -z "$NAME" ]] && NAME="RWA-009"
+[[ -z "$SYMBOL" ]] && SYMBOL="RWA009"
 #
 # WARNING (2021-09-08): The system cannot currently accomodate any LETTER beyond
 # "A".  To add more letters, we will need to update the PIP naming convention
-# to include the letter.  Unfortunately, while fixing this on-chain and in our
-# code would be easy, RWA001 integrations may already be using the old PIP
 # naming convention.  So, before we can have new letters we must:
 # 1. Change the existing PIP naming convention
 # 2. Change all the places that depend on that convention (this script included)
@@ -50,24 +48,8 @@ make build
 }
 log "${SYMBOL}: ${RWA_TOKEN}"
 
-[[ -z "$OPERATOR" ]] && OPERATOR=$(dapp create ForwardProxy) # using generic forward proxy for goerli
-log "${SYMBOL}_${LETTER}_OPERATOR: ${OPERATOR}"
-
-[[ -z "$MATE" ]] && MATE=$(dapp create ForwardProxy) # using generic forward proxy for goerli
-log "${SYMBOL}_${LETTER}_MATE: ${MATE}"
-
 # route it
-[[ -z "$RWA_OUTPUT_CONDUIT" ]] && {
-    RWA_OUTPUT_CONDUIT=$(dapp create RwaOutputConduit2 "$MCD_DAI")
-    log "${SYMBOL}_${LETTER}_OUTPUT_CONDUIT: ${RWA_OUTPUT_CONDUIT}"
-
-    # trust addresses for goerli
-    seth send "$RWA_OUTPUT_CONDUIT" 'rely(address)' "$MCD_PAUSE_PROXY" &&
-        seth send "$RWA_OUTPUT_CONDUIT" 'deny(address)' "$ETH_FROM"
-
-} || {
-    log "${SYMBOL}_${LETTER}_OUTPUT_CONDUIT: ${RWA_OUTPUT_CONDUIT}"
-}
+[[ -z "$DESTINATION_ADDRESS" ]] && die "DESTINATION_ADDRESS is not set"
 
 # join it
 RWA_JOIN=$(dapp create AuthGemJoin "$MCD_VAT" "$ILK_ENCODED" "$RWA_TOKEN")
@@ -76,14 +58,14 @@ seth send "$RWA_JOIN" 'rely(address)' "$MCD_PAUSE_PROXY" &&
     seth send "$RWA_JOIN" 'deny(address)' "$ETH_FROM"
 
 # urn it
-RWA_URN=$(dapp create RwaUrn2 "$MCD_VAT" "$MCD_JUG" "$RWA_JOIN" "$MCD_JOIN_DAI" "$RWA_OUTPUT_CONDUIT")
+RWA_URN=$(dapp create RwaUrn2 "$MCD_VAT" "$MCD_JUG" "$RWA_JOIN" "$MCD_JOIN_DAI" "$DESTINATION_ADDRESS")
 log "${SYMBOL}_${LETTER}_URN: ${RWA_URN}"
 seth send "$RWA_URN" 'rely(address)' "$MCD_PAUSE_PROXY" &&
     seth send "$RWA_URN" 'deny(address)' "$ETH_FROM"
 
 # jar it
 [[ -z "$RWA_JAR" ]] && {
-    RWA_JAR=$(dapp create RwaJar "$MCD_JOIN_DAI" "$MCD_VOW")
+    RWA_JAR=$(dapp create RwaJar "$CHANGELOG")
     log "${SYMBOL}_${LETTER}_JAR: ${RWA_JAR}"
 }
 
@@ -110,8 +92,6 @@ cat <<JSON
     "MCD_JOIN_${SYMBOL}_${LETTER}": "${RWA_JOIN}",
     "${SYMBOL}_${LETTER}_URN": "${RWA_URN}",
     "${SYMBOL}_${LETTER}_JAR": "${RWA_JAR}",
-    "${SYMBOL}_${LETTER}_OUTPUT_CONDUIT": "${RWA_OUTPUT_CONDUIT}",
-    "${SYMBOL}_${LETTER}_OPERATOR": "${OPERATOR}",
-    "${SYMBOL}_${LETTER}_MATE": "${MATE}"
+    "${SYMBOL}_${LETTER}_OUTPUT_CONDUIT": "${DESTINATION_ADDRESS}"
 }
 JSON

@@ -29,9 +29,9 @@ fi
 
 if [ -z "$MCD_ADDRESSES" ]; then
   if [ "${1}" == "goerli" ]; then
-    URL="https://changelog.makerdao.com/releases/goerli/active/contracts.json"
+    URL="https://chainlog.makerdao.com/api/goerli/active.json"
   elif [ "${1}" == "mainnet" ]; then
-    URL="https://changelog.makerdao.com/releases/mainnet/active/contracts.json"
+    URL="https://chainlog.makerdao.com/api/mainnet/active.json"
   elif [ "${1}" == "ces-goerli" ]; then
     URL="https://raw.githubusercontent.com/clio-finance/ces-goerli-mcd/master/contracts.json"
   else
@@ -42,7 +42,7 @@ if [ -z "$MCD_ADDRESSES" ]; then
   if validate_url "${URL}"; then
     echo "# Deployment addresses generated from:" >&2
     echo "# ${URL}" >&2
-    MCD_ADDRESSES="$(curl -Ls "${URL}")"
+    MCD_ADDRESSES="$(curl 'Cache-Control: no-cache, no-store' -Ls "${URL}")"
   else
     echo "# Invalid URL ${URL}" >&2
     [ -z "${PS1}" ] && exit || return
@@ -53,7 +53,10 @@ ENV_VARS=$(${BASH_SOURCE%/*}/../lib/shell-utils/bin/json-to-env -x <<<"$MCD_ADDR
 
 # If the file was sourced, then set the env vars directly
 if [[ $0 != "$BASH_SOURCE" ]]; then
+  # For some reason, bash ignores the first line of the string passed to `eval set`,
+  # so we are prepending a line with a comment to it
+  ENV_VARS=$(echo -e "#ENVIRONMENT:\n${ENV_VARS}")
   eval set -- "$ENV_VARS"
 else
-  echo $ENV_VARS
+  echo "$ENV_VARS"
 fi

@@ -2,7 +2,7 @@
 # (-include to ignore error if it does not exist)-include .env
 -include .env
 
-update:; dapp update
+update:; forge update
 nodejs-deps:; yarn install
 lint:; yarn run lint
 
@@ -11,11 +11,9 @@ lint:; yarn run lint
 SOLC_VERSION := 0_6_12
 solc:; nix-env -f https://github.com/dapphub/dapptools/archive/master.tar.gz -iA solc-static-versions.solc_${SOLC_VERSION}
 
-build:; dapp build
+build:; forge build
 
 estimate:; ./scripts/estimate-gas.sh ${file} ${contract} ${args}
-
-flatten:; hevm flatten --source-file ${file} --json-file out/dapp.sol.json
 
 size:; ./scripts/contract-size.sh ${file} ${contract} ${args}
 

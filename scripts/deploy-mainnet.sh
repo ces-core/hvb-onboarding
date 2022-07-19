@@ -8,7 +8,7 @@ source "${BASH_SOURCE%/*}/build-env-addresses.sh" mainnet >&2
 
 [ -f "${BASH_SOURCE%/*}/../.env" ] && source "${BASH_SOURCE%/*}/../.env"
 
-[[ "$ETH_RPC_URL" && "$(seth chain)" == "ethlive" ]] || die "Please set a mainnet ETH_RPC_URL"
+[[ "$ETH_RPC_URL" && "$(cast chain)" == "ethlive" ]] || die "Please set a mainnet ETH_RPC_URL"
 [[ -z "$CHANGELOG" ]] && die 'Please set the CHANGELOG env var'
 [[ -z "$MCD_PAUSE_PROXY" ]] && die 'Please set the MCD_PAUSE_PROXY env var'
 [[ -z "$MIP21_LIQUIDATION_ORACLE" ]] && die 'Please set the MIP21_LIQUIDATION_ORACLE env var'
@@ -19,7 +19,7 @@ source "${BASH_SOURCE%/*}/build-env-addresses.sh" mainnet >&2
 [[ -z "$DESTINATION_ADDRESS" ]] && die 'Please set the DESTINATION_ADDRESS env var'
 
 # TODO: confirm for mainnet deployment
-export ETH_GAS=6000000
+# export ETH_GAS=6000000
 
 # TODO: confirm if name/symbol is going to follow the RWA convention
 # TODO: confirm with DAO at the time of mainnet deployment if OFH will indeed be 007
@@ -39,14 +39,30 @@ export ETH_GAS=6000000
 [[ -z "$LETTER" ]] && LETTER="A";
 
 ILK="${SYMBOL}-${LETTER}"
-ILK_ENCODED=$(seth --to-bytes32 "$(seth --from-ascii ${ILK})")
+ILK_ENCODED=$(cast --to-bytes32 "$(cast --from-ascii ${ILK})")
 
 # build it
 make build
 
+FORGE_DEPLOY="${BASH_SOURCE%/*}/forge-deploy.sh"
+CAST_SEND="${BASH_SOURCE%/*}/cast-send.sh"
+
+confirm_before_proceed() {
+    local REPLY
+    read -p "$1 [Y/n] " -n 1 -r REPLY >&2
+    echo ""
+    if [[ $REPLY =~ ^[Nn]$ ]]; then
+        exit 1
+    else
+        return 0
+    fi
+}
+
 # tokenize it
 [[ -z "$RWA_TOKEN" ]] && {
     debug 'WARNING: `$RWA_TOKEN` not set. Deploying it...'
+    confirm_before_proceed "Deploy RWA_TOKEN?"
+
     TX=$($CAST_SEND "${RWA_TOKEN_FAB}" 'createRwaToken(string,string,address)' "$NAME" "$SYMBOL" "$MCD_PAUSE_PROXY")
     debug "TX: $TX"
 
@@ -65,27 +81,30 @@ debug "${SYMBOL}_${LETTER}_OUTPUT_CONDUIT: ${DESTINATION_ADDRESS}"
 
 # join it
 [[ -z "$RWA_JOIN" ]] && {
-    RWA_JOIN=$(dapp create AuthGemJoin "$MCD_VAT" "$ILK_ENCODED" "$RWA_TOKEN")
+    confirm_before_proceed "Deploy RWA_JOIN?"
+    RWA_JOIN=$($FORGE_DEPLOY --verify AuthGemJoin --constructor-args "$MCD_VAT" "$ILK_ENCODED" "$RWA_TOKEN")
     debug "MCD_JOIN_${SYMBOL}_${LETTER}: ${RWA_JOIN}"
-    seth send "$RWA_JOIN" 'rely(address)' "$MCD_PAUSE_PROXY" &&
-        seth send "$RWA_JOIN" 'deny(address)' "$ETH_FROM"
+    $CAST_SEND "$RWA_JOIN" 'rely(address)' "$MCD_PAUSE_PROXY" &&
+        $CAST_SEND "$RWA_JOIN" 'deny(address)' "$ETH_FROM"
 } || {
     debug "MCD_JOIN_${SYMBOL}_${LETTER}: ${RWA_JOIN}"
 }
 
 # urn it
 [[ -z "$RWA_URN" ]] && {
-    RWA_URN=$(dapp create RwaUrn2 "$MCD_VAT" "$MCD_JUG" "$RWA_JOIN" "$MCD_JOIN_DAI" "$DESTINATION_ADDRESS")
+    confirm_before_proceed "Deploy RWA_URN?"
+    RWA_URN=$($FORGE_DEPLOY --verify RwaUrn2 --constructor-args "$MCD_VAT" "$MCD_JUG" "$RWA_JOIN" "$MCD_JOIN_DAI" "$DESTINATION_ADDRESS")
     debug "${SYMBOL}_${LETTER}_URN: ${RWA_URN}"
-    seth send "$RWA_URN" 'rely(address)' "$MCD_PAUSE_PROXY" &&
-        seth send "$RWA_URN" 'deny(address)' "$ETH_FROM"
+    $CAST_SEND "$RWA_URN" 'rely(address)' "$MCD_PAUSE_PROXY" &&
+        $CAST_SEND "$RWA_URN" 'deny(address)' "$ETH_FROM"
 } || {
     debug "${SYMBOL}_${LETTER}_URN: ${RWA_URN}"
 }
 
 # jar it
 [[ -z "$RWA_JAR" ]] && {
-    RWA_JAR=$(dapp create RwaJar "$CHANGELOG")
+    confirm_before_proceed "Deploy RWA_JAR?"
+    RWA_JAR=$($FORGE_DEPLOY --verify RwaJar --constructor-args "$CHANGELOG")
 }
 debug "${SYMBOL}_${LETTER}_JAR: ${RWA_JAR}"
 

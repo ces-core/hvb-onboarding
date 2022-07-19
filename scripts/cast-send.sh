@@ -12,16 +12,21 @@ send() {
     PASSWORD_OPT=(--password "$PASSWORD")
   fi
 
+  local GAS_LIMIT_OPT=()
+  if [ -n "$FOUNDRY_GAS_LIMIT" ]; then
+    GAS_LIMIT_OPT=(--gas-limit "$FOUNDRY_GAS_LIMIT")
+  fi
+
   local RESPONSE
   # Log the command being issued, making sure not to expose the password
-  log "cast send --json --gas-limit $FOUNDRY_GAS_LIMIT --keystore="$FOUNDRY_ETH_KEYSTORE_FILE" $(sed 's/ .*$/ [REDACTED]/' <<<"${PASSWORD_OPT[@]}")" $(printf ' %q' "$@")
+  log "cast send ${GAS_LIMIT_OPT[@]} --json --keystore="$FOUNDRY_ETH_KEYSTORE_FILE" $(sed 's/ .*$/ [REDACTED]/' <<<"${PASSWORD_OPT[@]}")" $(printf ' %q' "$@")
   # Currently `cast send` sends the logs to stdout instead of stderr.
   # This makes it hard to compose its output with other commands, so here we are:
   # 1. Duplicating stdout to stderr through `tee`
   # 2. Extracting only the hash of the transaction to stdout
-  RESPONSE=$(cast send --json --gas-limit $FOUNDRY_GAS_LIMIT --keystore="$FOUNDRY_ETH_KEYSTORE_FILE" "${PASSWORD_OPT[@]}" "$@" | tee >(cat 1>&2))
+  RESPONSE=$(cast send --json "${GAS_LIMIT_OPT[@]}" --keystore="$FOUNDRY_ETH_KEYSTORE_FILE" "${PASSWORD_OPT[@]}" "$@" | tee >(cat 1>&2))
 
-  grep -F 'ProviderError' <<<"$RESPONSE" && die "cast send failed"
+  grep 'ProviderError' <<<"$RESPONSE" && die "cast send failed"
 
   jq -Rr 'fromjson? | .transactionHash' <<<"$RESPONSE"
 }

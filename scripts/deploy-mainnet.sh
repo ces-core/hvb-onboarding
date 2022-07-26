@@ -72,8 +72,6 @@ confirm_before_proceed() {
 
     RWA_TOKEN="$(jq -r ".logs[0].address" <<<"$RECEIPT")"
     debug "${SYMBOL}: ${RWA_TOKEN}"
-} || {
-    debug "${SYMBOL}: ${RWA_TOKEN}"
 }
 
 # route it
@@ -82,12 +80,16 @@ debug "${SYMBOL}_${LETTER}_OUTPUT_CONDUIT: ${DESTINATION_ADDRESS}"
 # join it
 [[ -z "$RWA_JOIN" ]] && {
     confirm_before_proceed "Deploy RWA_JOIN?"
-    RWA_JOIN=$($FORGE_DEPLOY --verify AuthGemJoin --constructor-args "$MCD_VAT" "$ILK_ENCODED" "$RWA_TOKEN")
-    debug "MCD_JOIN_${SYMBOL}_${LETTER}: ${RWA_JOIN}"
-    $CAST_SEND "$RWA_JOIN" 'rely(address)' "$MCD_PAUSE_PROXY" &&
-        $CAST_SEND "$RWA_JOIN" 'deny(address)' "$ETH_FROM"
-} || {
-    debug "MCD_JOIN_${SYMBOL}_${LETTER}: ${RWA_JOIN}"
+
+	TX=$($CAST_SEND "${JOIN_FAB}" 'newAuthGemJoin(address,bytes32,address)' "$MCD_PAUSE_PROXY" "$ILK_ENCODED" "$RWA_TOKEN")
+    debug "TX: $TX"
+
+    RECEIPT="$(cast receipt --json $TX)"
+    TX_STATUS="$(jq -r '.status' <<<"$RECEIPT")"
+    [[ "$TX_STATUS" != "0x1" ]] && die "Failed to create ${SYMBOL} token in tx ${TX}."
+
+	RWA_JOIN="$(jq -r ".logs[0].address" <<<"$RECEIPT")"
+	debug "MCD_JOIN_${SYMBOL}_${LETTER}: ${RWA_JOIN}"
 }
 
 # urn it
@@ -97,8 +99,6 @@ debug "${SYMBOL}_${LETTER}_OUTPUT_CONDUIT: ${DESTINATION_ADDRESS}"
     debug "${SYMBOL}_${LETTER}_URN: ${RWA_URN}"
     $CAST_SEND "$RWA_URN" 'rely(address)' "$MCD_PAUSE_PROXY" &&
         $CAST_SEND "$RWA_URN" 'deny(address)' "$ETH_FROM"
-} || {
-    debug "${SYMBOL}_${LETTER}_URN: ${RWA_URN}"
 }
 
 # jar it

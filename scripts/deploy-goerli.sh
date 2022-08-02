@@ -34,20 +34,28 @@ ILK_ENCODED="$(cast --from-ascii "$ILK" | cast --to-bytes32)"
 make build
 
 FORGE_DEPLOY="${BASH_SOURCE%/*}/forge-deploy.sh"
+FORGE_VERIFY="${BASH_SOURCE%/*}/forge-verify.sh"
 CAST_SEND="${BASH_SOURCE%/*}/cast-send.sh"
+
+# Contracts
+declare -A contracts
+contracts[token]='RwaToken'
+contracts[jar]='RwaJar'
+contracts[urn]='RwaUrn2'
+contracts[liquidationOracle]='RwaLiquidationOracle'
 
 # tokenize it
 [[ -z "$RWA_TOKEN" ]] && {
-    debug 'WARNING: `$RWA_TOKEN` not set. Deploying it...'
-    TX=$($CAST_SEND "${RWA_TOKEN_FAB}" 'createRwaToken(string,string,address)' "$NAME" "$SYMBOL" "$MCD_PAUSE_PROXY")
-    debug "TX: $TX"
+	debug 'WARNING: `$RWA_TOKEN` not set. Deploying it...'
+	TX=$($CAST_SEND "${RWA_TOKEN_FAB}" 'createRwaToken(string,string,address)' "$NAME" "$SYMBOL" "$OPERATOR")
+	debug "TX: $TX"
 
-    RECEIPT="$(cast receipt --json $TX)"
-    TX_STATUS="$(jq -r '.status' <<<"$RECEIPT")"
-    [[ "$TX_STATUS" != "0x1" ]] && die "Failed to create ${SYMBOL} token in tx ${TX}."
+	RECEIPT="$(cast receipt --json $TX)"
+	TX_STATUS="$(jq -r '.status' <<<"$RECEIPT")"
+	[[ "$TX_STATUS" != "0x1" ]] && die "Failed to create ${SYMBOL} token in tx ${TX}."
 
-    RWA_TOKEN="$(jq -r ".logs[0].address" <<<"$RECEIPT")"
-    debug "${SYMBOL}: ${RWA_TOKEN}"
+	RWA_TOKEN=$(cast --to-checksum-address "$(jq -r ".logs[0].address" <<<"$RECEIPT")")
+	debug "${SYMBOL}: ${RWA_TOKEN}"
 }
 
 # route it
@@ -63,32 +71,48 @@ debug "${SYMBOL}_${LETTER}_OUTPUT_CONDUIT: ${DESTINATION_ADDRESS}"
     TX_STATUS="$(jq -r '.status' <<<"$RECEIPT")"
     [[ "$TX_STATUS" != "0x1" ]] && die "Failed to create ${SYMBOL} token in tx ${TX}."
 
-	RWA_JOIN="$(jq -r ".logs[0].address" <<<"$RECEIPT")"
+	RWA_JOIN=$(cast --to-checksum-address "$(jq -r ".logs[0].address" <<<"$RECEIPT")")
 	debug "MCD_JOIN_${SYMBOL}_${LETTER}: ${RWA_JOIN}"
 }
 
 # urn it
 [[ -z "$RWA_URN" ]] && {
-    RWA_URN=$($FORGE_DEPLOY --verify RwaUrn2 --constructor-args "$MCD_VAT" "$MCD_JUG" "$RWA_JOIN" "$MCD_JOIN_DAI" "$DESTINATION_ADDRESS")
+    RWA_URN=$($FORGE_DEPLOY ${contracts[urn]} --constructor-args "$MCD_VAT" "$MCD_JUG" "$RWA_JOIN" "$MCD_JOIN_DAI" "$DESTINATION_ADDRESS")
     debug "${SYMBOL}_${LETTER}_URN: ${RWA_URN}"
+
     $CAST_SEND "$RWA_URN" 'rely(address)' "$MCD_PAUSE_PROXY" &&
-        $CAST_SEND "$RWA_URN" 'deny(address)' "$ETH_FROM"
+	    $CAST_SEND "$RWA_URN" 'deny(address)' "$ETH_FROM"
 }
 
 # jar it
 [[ -z "$RWA_JAR" ]] && {
-    RWA_JAR=$($FORGE_DEPLOY --verify RwaJar --constructor-args "$CHANGELOG")
+    RWA_JAR=$($FORGE_DEPLOY ${contracts[jar]} --constructor-args "$CHANGELOG")
+    debug "${SYMBOL}_${LETTER}_JAR: ${RWA_JAR}"
 }
-debug "${SYMBOL}_${LETTER}_JAR: ${RWA_JAR}"
 
 # price it
 [[ -z "$MIP21_LIQUIDATION_ORACLE" ]] && {
-    MIP21_LIQUIDATION_ORACLE=$($FORGE_DEPLOY --verify RwaLiquidationOracle --constructor-args "$MCD_VAT" "$MCD_VOW")
+    MIP21_LIQUIDATION_ORACLE=$($FORGE_DEPLOY ${contracts[liquidationOracle]} --constructor-args "$MCD_VAT" "$MCD_VOW")
     debug "MIP21_LIQUIDATION_ORACLE: ${MIP21_LIQUIDATION_ORACLE}"
 
     $CAST_SEND "$MIP21_LIQUIDATION_ORACLE" 'rely(address)' "$MCD_PAUSE_PROXY" &&
         $CAST_SEND "$MIP21_LIQUIDATION_ORACLE" 'deny(address)' "$ETH_FROM"
 }
+
+# Verify the contracts
+# Verification is a no-op if the contracts are already verified
+$FORGE_VERIFY $RWA_TOKEN ${contracts[token]} --constructor-args \
+	$(cast abi-encode 'x(string,string)' "$NAME" "$SYMBOL") >&2
+
+$FORGE_VERIFY $RWA_URN ${contracts[urn]} --constructor-args \
+	$(cast abi-encode 'x(address,address,address,address,address)' \
+		"$MCD_VAT" "$MCD_JUG" "$RWA_JOIN" "$MCD_JOIN_DAI" "$DESTINATION_ADDRESS") >&2
+
+$FORGE_VERIFY $RWA_JAR ${contracts[jar]} --constructor-args \
+	$(cast abi-encode 'x(address)' "$CHANGELOG") >&2
+
+$FORGE_VERIFY $MIP21_LIQUIDATION_ORACLE ${contracts[liquidationOracle]} --constructor-args \
+	$(cast abi-encode 'x(address,address)' "$MCD_VAT" "$MCD_VOW") >&2
 
 # print it
 cat <<JSON
